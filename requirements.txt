@@ -1,0 +1,7 @@
+argparse
+numpy
+pandas
+opencv-python
+dlib
+torch
+torchvision
