@@ -16,7 +16,11 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(),
     package_data={'': ['*.dat', '*.csv']},
-    # scripts=[],
+    entry_points={
+        'console_scripts': [
+            'facecam = face_recognition_cam.__main__:main'
+        ]
+    },
     tests_require=[
         'pytest'
     ],
@@ -26,8 +30,7 @@ setup(
         'pandas',
         'opencv-python',
         'dlib',
-        'torch',
-        'torchvision',
+        'tensorflow',
         'pkg_resources'
     ]
 )

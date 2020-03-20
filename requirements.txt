@@ -3,5 +3,4 @@ numpy
 pandas
 opencv-python
 dlib
-torch
-torchvision
+tensorflow
