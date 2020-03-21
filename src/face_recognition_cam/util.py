@@ -8,6 +8,9 @@ import numpy as np
 import face_recognition_cam as fc
 
 
+# FILES HANDLING UTILS
+
+
 def load_known_faces(folder):
     faces_to_return = []
     names_to_return = []
@@ -31,6 +34,64 @@ def load_known_faces(folder):
             faces_to_return.append(face)
 
     return names_to_return, np.array(faces_to_return)
+
+
+# VIDEO HANDLING
+
+
+class Camera:
+
+    def __init__(self):
+        self._cap = None
+
+    def __enter__(self):
+        self._cap = cv2.VideoCapture(0)
+        return self
+
+    def image(self):
+        ret, img = self._cap.read()
+        if ret:
+            return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        else:
+            return None
+
+    def __exit__(self, type, value, traceback):
+        self._cap.close()
+
+
+class ImageWindow:
+
+    def __init__(self, name):
+        self._name = name
+        cv2.namedWindow(name, cv2.WINDOW_AUTOSIZE)
+
+    def show(self, img, box_faces=None):
+
+        if box_faces is not None:
+            img_ = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+            for box, name in zip(*box_faces):
+                x1, y1, x2, y2 = box
+                cv2.rectangle(img_, (x1, y1), (x2, y2), (80, 18, 236), 2)
+                cv2.rectangle(img_, (x1, y2 - 20), (x2, y2), (80, 18, 236), cv2.FILLED)
+                font = cv2.FONT_HERSHEY_DUPLEX
+                cv2.putText(img_, name, (x1 + 6, y2 - 6), font, 0.3, (255, 255, 255), 1)
+
+            cv2.imshow(self._name, img_)
+        else:
+            cv2.imshow(self._name, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+
+    def close(self):
+        cv2.destroyWindow(self._name)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        cv2.destroyWindow(self._name)
+
+
+# OTHER STUFF
 
 
 def find_known(to_find, known, names, threshold):
