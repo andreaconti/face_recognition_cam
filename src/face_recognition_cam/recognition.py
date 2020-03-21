@@ -4,6 +4,7 @@ Module containing person recognition
 
 from pkg_resources import resource_filename
 import warnings
+import numpy as np
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=FutureWarning)
@@ -54,6 +55,14 @@ class FaceRecognizer:
 
         return faces_embedded
 
-    def assign_names(self, known_embed, faces):
-        # TODO
-        return ['unknown'] * len(faces)
+    def assign_names(self, known_embed, names, faces, threshold=0.65):
+        to_find_emb = self.embed_faces(faces)
+        found = []
+        for emb in to_find_emb:
+            distances = np.sum(np.square(known_embed - emb), 1)
+            idx = np.argmin(distances)
+            if distances[idx] > threshold:
+                return 'unknown'
+            else:
+                found.append(names[idx])
+        return found
