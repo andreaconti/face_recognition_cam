@@ -1,83 +1,42 @@
 """
-Utils functions used in camera pipeline
+utility functions
 """
 
-import dlib
-import numpy as np
+import os
 import cv2
-from pkg_resources import resource_filename
-
-# load predictor with module
-
-_landmarks_pred = dlib.shape_predictor(
-    resource_filename(
-        'face_recognition_cam.resources.models',
-        'shape_predictor_5_face_landmarks.dat'
-    )
-)
+import numpy as np
+import face_recognition_cam as fc
 
 
-def _find_landmarks(img, res):
-    shape = _landmarks_pred(img, res)
-    landmark_points = np.empty(shape=(5, 2), dtype=int)
-    for i, point in enumerate(shape.parts()):
-        landmark_points[i, 0] = point.x
-        landmark_points[i, 1] = point.y
-    return landmark_points
+def load_known_faces(folder):
+    faces_to_return = []
+    names_to_return = []
+    for f_name in os.listdir(folder):
+        if f_name.lower().endswith(('.jpg', '.png')):
+            img = cv2.cvtColor(cv2.imread(os.path.join(folder, f_name)), cv2.COLOR_BGR2RGB)
+            faces = fc.crop_aligned_faces(img, resize=(112, 112))
+
+            if len(faces) == 0:
+                print(f'[WARNING] face not found in {f_name}, skipped.')
+                continue
+            if len(faces) > 1:
+                print(f'[WARNING] too many faces found in {f_name}, skipped.')
+                continue
+
+            face = faces[0]
+            name = os.path.basename(f_name)
+            name = os.path.splitext(name)[0]
+            names_to_return.append(name)
+
+            faces_to_return.append(face)
+
+    return names_to_return, np.array(faces_to_return)
 
 
-def find_faces(img, landmarks=False, **kwargs):
-    detector = dlib.get_frontal_face_detector()
-    results = detector(img, 1)
-
-    output = []
-    for res in results:
-        landmarks_ = None
-        if landmarks:
-            landmarks_ = _find_landmarks(img, res)
-            if 'relative' in kwargs and kwargs['relative'] is True:
-                landmarks_ = landmarks_ - np.array([res.left(), res.top()])
-
-        output.append({
-            'rectangle': ((res.left(), res.top()), (res.right(), res.bottom())),
-            'landmarks': landmarks_
-        })
-
-    return output
-
-
-def rotate_on_face(img, landmarks):
-
-    # find eyes center
-    right_eye = landmarks[0]
-    left_eye = landmarks[2]
-    eyes_center = (right_eye + left_eye) // 2
-
-    # find angle
-    rel_measures = right_eye - left_eye
-    tangent = rel_measures[1] / rel_measures[0]
-    angle = np.degrees(np.arctan(tangent))
-
-    # rotate img
-    rot_mat = cv2.getRotationMatrix2D(tuple(eyes_center), angle, 1.0)
-    aligned = cv2.warpAffine(
-        img,
-        rot_mat,
-        tuple(img.shape[:2][::-1]),
-        flags=cv2.INTER_LINEAR
-    )
-
-    # rotate landmarks
-    landmarks_ = np.ones(shape=(landmarks.shape[0], landmarks.shape[1] + 1))
-    landmarks_[:, :-1] = landmarks
-    landmarks_ = np.round(np.matmul(rot_mat, landmarks_.T).T).astype(int)
-
-    # find new bounding box
-    eye_distance = landmarks_[0, 0] - landmarks_[2, 0]
-    nose_distance = landmarks[4, 1] - landmarks_[0, 1]
-    x1 = landmarks_[2, 0] - int(eye_distance*0.30)
-    x2 = landmarks_[0, 0] + int(eye_distance*0.30)
-    y1 = landmarks_[0, 1] - int(nose_distance*0.7)
-    y2 = landmarks_[4, 1] + int(nose_distance*1.3)
-
-    return aligned, landmarks_, ((x1, y1), (x2, y2))
+def find_known(to_find, known, names, threshold):
+    distances = np.sum(np.square(known - to_find), 1)
+    idx = np.argmin(distances)
+    if distances[idx] > threshold:
+        return 'unknown'
+    else:
+        return names[idx]
