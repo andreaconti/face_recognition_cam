@@ -70,6 +70,7 @@ def show(args):
         # load recognizer, archive and start camera and window
         recognizer = fc.FaceRecognizer()
         known_names, known_embedded = pickle.load(args['EMBED_FILE'])
+        print(known_names)
         with fc.util.ImageWindow('camera') as window:
             while True:
 
@@ -81,7 +82,8 @@ def show(args):
 
                 # find faces, and who they are
                 faces, boxes = fc.crop_aligned_faces(frame, (112, 112), with_boxes=True)
-                found_names = recognizer.assign_names(known_embedded, faces)
+                if len(faces) != 0:
+                    found_names = recognizer.assign_names(known_embedded, known_names, faces, threshold=0.65)
 
                 # show image labeled
                 window.show(frame, box_faces=(boxes, found_names))

@@ -62,7 +62,7 @@ class FaceRecognizer:
             distances = np.sum(np.square(known_embed - emb), 1)
             idx = np.argmin(distances)
             if distances[idx] > threshold:
-                return 'unknown'
+                found.append('unknown')
             else:
                 found.append(names[idx])
         return found
