@@ -56,7 +56,7 @@ class Camera:
             return None
 
     def __exit__(self, type, value, traceback):
-        self._cap.close()
+        self._cap.release()
 
 
 class ImageWindow:
@@ -89,15 +89,3 @@ class ImageWindow:
 
     def __exit__(self, type, value, traceback):
         cv2.destroyWindow(self._name)
-
-
-# OTHER STUFF
-
-
-def find_known(to_find, known, names, threshold):
-    distances = np.sum(np.square(known - to_find), 1)
-    idx = np.argmin(distances)
-    if distances[idx] > threshold:
-        return 'unknown'
-    else:
-        return names[idx]
