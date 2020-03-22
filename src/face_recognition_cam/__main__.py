@@ -45,6 +45,12 @@ def main():
     parser_test.add_argument('DIR', type=str, help='path to a directory with images')
     parser_test.set_defaults(func=test)
 
+    # recognize command
+    parser_test = subparsers.add_parser('recognize', help='test on a dataset')
+    parser_test.add_argument('EMBED_FILE', type=argparse.FileType('rb'), help='path to embedded known people')
+    parser_test.add_argument('IMG', type=str, help='path to an image')
+    parser_test.set_defaults(func=recognize)
+
     # parse and run
     args = parser.parse_args()
     args.func(vars(args))
@@ -108,6 +114,23 @@ def show(args):
 
 def watch(args):
     pass
+
+
+# recognize command
+
+def recognize(args):
+
+    img = cv2.imread(args['IMG'])
+    cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    faces = fc.crop_aligned_faces(img, resize=(112, 112))
+
+    embedder = fc.FaceEmbedder()
+    recognizer = pickle.load(args['EMBED_FILE'])
+    faces_embedded = embedder.embed_faces(faces)
+    names = recognizer.assign_names(faces_embedded)
+
+    for name in names:
+        print(f'found: {name}')
 
 
 # test command
