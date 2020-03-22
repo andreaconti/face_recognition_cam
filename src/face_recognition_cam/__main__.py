@@ -9,10 +9,9 @@ face recognition cam main
 import argparse
 import cv2
 import face_recognition_cam as fc
+import numpy as np
 import os
 import pickle
-from sklearn import metrics
-import warnings
 
 
 # ARGUMENT PARSING & MAIN
@@ -39,12 +38,6 @@ def main():
     parser_show.add_argument('EMBED_FILE', type=argparse.FileType('rb'), help='path to embedded known people')
     parser_show.set_defaults(func=show)
 
-    # test command
-    parser_test = subparsers.add_parser('test', help='test on a dataset')
-    parser_test.add_argument('EMBED_FILE', type=argparse.FileType('rb'), help='path to embedded known people')
-    parser_test.add_argument('DIR', type=str, help='path to a directory with images')
-    parser_test.set_defaults(func=test)
-
     # recognize command
     parser_test = subparsers.add_parser('recognize', help='test on a dataset')
     parser_test.add_argument('EMBED_FILE', type=argparse.FileType('rb'), help='path to embedded known people')
@@ -60,20 +53,35 @@ def main():
 
 
 # embed command
+# TODO: check empty etc.
 
 def embed(args):
 
     recognizer = fc.FaceRecognizer()
     embedder = fc.FaceEmbedder()
     if os.path.isdir(args['DIR']):
-        names, faces = fc.load_known_faces(args['DIR'])
-        for name in names:
-            print(f'OK: found face for {name}')
+
+        # extract faces
+        names, faces = fc.load_faces(args['DIR'])
+
+        for name in np.unique(names):
+            num_examples = len(faces[names == name])
+            print(f'faces found for {name}: {num_examples}')
+
+        # embedding
         faces_embedded = embedder.embed_faces(faces)
-        recognizer.fit(faces_embedded, names)
+
+        # training
+        print('fitting on data.. ', end='')
+        score = recognizer.fit(faces_embedded, names)
+        print('{:.2f} % score'.format(score * 100))
+
+        # save
         with open(args['o'], 'wb') as f:
             pickle.dump(recognizer, f)
         print(f'Saved into {args["o"]}')
+    else:
+        print('error: not dir')
 
 
 # show command
@@ -131,18 +139,3 @@ def recognize(args):
 
     for name in names:
         print(f'found: {name}')
-
-
-# test command
-
-def test(args):
-
-    y, faces = fc.util.load_known_faces(args['DIR'])
-    embedder = fc.FaceEmbedder()
-    recognizer = pickle.load(args['EMBED_FILE'])
-    faces_embedded = embedder.embed_faces(faces)
-    y_pred = recognizer.assign_names(faces_embedded)
-
-    # compute some stats
-    print('== REPORT ==')
-    print(metrics.classification_report(y, y_pred, zero_division=0))

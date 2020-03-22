@@ -11,7 +11,7 @@ import face_recognition_cam as fc
 # FILES HANDLING UTILS
 
 
-def load_known_faces(folder):
+def load_faces(folder):
     faces_to_return = []
     names_to_return = []
 
@@ -44,7 +44,7 @@ def load_known_faces(folder):
             faces_to_return += faces
             names_to_return += ([name] * len(faces))
 
-    return names_to_return, np.array(faces_to_return)
+    return np.array(names_to_return), np.array(faces_to_return)
 
 
 def _load_from_video(video_path):

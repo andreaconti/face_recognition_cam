@@ -7,7 +7,7 @@ from .detection import (
 
 from . import util
 from .util import (
-    load_known_faces
+    load_faces
 )
 
 from .recognition import (
