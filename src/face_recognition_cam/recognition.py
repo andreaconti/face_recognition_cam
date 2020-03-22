@@ -28,7 +28,7 @@ _weights = resource_filename(
 )
 
 
-# Recognizer
+# CNN Embedder
 
 
 class FaceEmbedder:
@@ -57,6 +57,9 @@ class FaceEmbedder:
         return faces_embedded
 
 
+# Instances of the recognizer
+
+
 class FaceRecognizer:
 
     def __init__(self):
@@ -64,14 +67,24 @@ class FaceRecognizer:
         self._outlier = OneClassSVM(nu=0.01)
 
     def fit(self, known_embed, names):
-        self._recognizer.fit(known_embed, names)
+        self._num_classes = len(np.unique(names))
+
+        if self._num_classes > 1:
+            self._recognizer.fit(known_embed, names)
+        else:
+            self._name = names[0]
+
         self._outlier.fit(known_embed)
 
     def assign_names(self, embedded_faces):
-        scores = self._recognizer.predict_proba(embedded_faces)
-        names = self._recognizer.classes_[np.argmax(scores, 1)]
+
+        if self._num_classes > 1:
+            scores = self._recognizer.predict_proba(embedded_faces)
+            names = self._recognizer.classes_[np.argmax(scores, 1)]
+        else:
+            names = np.array([self._name] * len(embedded_faces))
 
         unknowns = self._outlier.predict(embedded_faces)
-        names[unknowns == -1] = 'unknowns'
+        names[unknowns == -1] = 'unknown'
 
         return names
