@@ -14,7 +14,15 @@ import face_recognition_cam as fc
 def load_known_faces(folder):
     faces_to_return = []
     names_to_return = []
+
     for f_name in os.listdir(folder):
+
+        # assigned name
+        name = os.path.basename(f_name)
+        name = os.path.splitext(name)[0]
+        name = name.split('-')[0]
+
+        # load face from image
         if f_name.lower().endswith(('.jpg', '.png')):
             img = cv2.cvtColor(cv2.imread(os.path.join(folder, f_name)), cv2.COLOR_BGR2RGB)
             faces = fc.crop_aligned_faces(img, resize=(112, 112))
@@ -27,13 +35,45 @@ def load_known_faces(folder):
                 continue
 
             face = faces[0]
-            name = os.path.basename(f_name)
-            name = os.path.splitext(name)[0]
             names_to_return.append(name)
-
             faces_to_return.append(face)
 
+        # load face from video
+        elif f_name.lower().endswith('.mp4'):
+            faces = _load_from_video(os.path.join(folder, f_name))
+            faces_to_return += faces
+            names_to_return += ([name] * len(faces))
+
     return names_to_return, np.array(faces_to_return)
+
+
+def _load_from_video(video_path):
+    faces_to_return = []
+    cap = cv2.VideoCapture(video_path)
+    frame_rate = cap.get(5)
+    ret, frame = cap.read()
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    i = 0
+    while ret is True:
+        if i % frame_rate == 0:
+            faces = fc.crop_aligned_faces(frame, resize=(112, 112))
+            if len(faces) == 1:
+                faces_to_return.append(faces[0])
+                ret, frame = cap.read()
+                if ret:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            else:
+                ret, frame = cap.read()
+                if ret:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        else:
+            ret, frame = cap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        i += 1
+
+    cap.release()
+    return faces_to_return
 
 
 # VIDEO HANDLING
