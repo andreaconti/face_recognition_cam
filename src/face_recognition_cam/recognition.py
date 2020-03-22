@@ -4,7 +4,9 @@ Module containing person recognition
 
 from pkg_resources import resource_filename
 import warnings
-from sklearn.svm import SVC, OneClassSVM
+from sklearn.svm import SVC
+import sklearn.utils
+from sklearn.model_selection import cross_val_score
 import numpy as np
 
 with warnings.catch_warnings():
@@ -59,32 +61,36 @@ class FaceEmbedder:
 
 # Instances of the recognizer
 
+_unknowns = resource_filename(
+    'face_recognition_cam.resources.data',
+    'unknowns_db.csv'
+)
+
 
 class FaceRecognizer:
 
     def __init__(self):
-        self._recognizer = SVC(probability=True)
-        self._outlier = OneClassSVM(nu=0.01)
+        self._recognizer = SVC()
 
     def fit(self, known_embed, names):
-        self._num_classes = len(np.unique(names))
 
-        if self._num_classes > 1:
-            self._recognizer.fit(known_embed, names)
-        else:
-            self._name = names[0]
+        # load unknowns
+        unknowns = np.loadtxt(_unknowns, delimiter=',')
+        unknowns = unknowns[:len(known_embed) // len(np.unique(names))]
+        X = np.vstack([unknowns, known_embed])
+        y = np.hstack([
+            np.array(['unknown'] * len(unknowns)),
+            np.array(names)
+        ])
+        X, y = sklearn.utils.shuffle(X, y)
 
-        self._outlier.fit(known_embed)
+        # fitting
+        scores = cross_val_score(self._recognizer, X, y, cv=5)
+        mean_score = np.mean(scores)
+        self._recognizer.fit(X, y)
+
+        return mean_score
 
     def assign_names(self, embedded_faces):
-
-        if self._num_classes > 1:
-            scores = self._recognizer.predict_proba(embedded_faces)
-            names = self._recognizer.classes_[np.argmax(scores, 1)]
-        else:
-            names = np.array([self._name] * len(embedded_faces))
-
-        unknowns = self._outlier.predict(embedded_faces)
-        names[unknowns == -1] = 'unknown'
-
+        names = self._recognizer.predict(embedded_faces)
         return names
