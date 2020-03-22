@@ -50,13 +50,15 @@ def main():
 def embed(args):
 
     recognizer = fc.FaceRecognizer()
+    embedder = fc.FaceEmbedder()
     if os.path.isdir(args['DIR']):
         names, faces = fc.load_known_faces(args['DIR'])
         for name in names:
             print(f'OK: found face for {name}')
-        faces_embedded = recognizer.embed_faces(faces)
+        faces_embedded = embedder.embed_faces(faces)
+        recognizer.fit(faces_embedded, names)
         with open(args['o'], 'wb') as f:
-            pickle.dump((names, faces_embedded), f)
+            pickle.dump(recognizer, f)
         print(f'Saved into {args["o"]}')
 
 
@@ -68,9 +70,8 @@ def show(args):
     with fc.util.Camera() as cam:
 
         # load recognizer, archive and start camera and window
-        recognizer = fc.FaceRecognizer()
-        known_names, known_embedded = pickle.load(args['EMBED_FILE'])
-        print(known_names)
+        embedder = fc.FaceEmbedder()
+        recognizer = pickle.load(args['EMBED_FILE'])
         with fc.util.ImageWindow('camera') as window:
             while True:
 
@@ -83,10 +84,13 @@ def show(args):
                 # find faces, and who they are
                 faces, boxes = fc.crop_aligned_faces(frame, (112, 112), with_boxes=True)
                 if len(faces) != 0:
-                    found_names = recognizer.assign_names(known_embedded, known_names, faces, threshold=0.65)
+                    faces_embedded = embedder.embed_faces(faces)
+                    found_names = recognizer.assign_names(faces_embedded)
+                    window.show(frame, box_faces=(boxes, found_names))
+                else:
+                    window.show(frame)
 
-                # show image labeled
-                window.show(frame, box_faces=(boxes, found_names))
+                # check for end
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 

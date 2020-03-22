@@ -4,6 +4,7 @@ Module containing person recognition
 
 from pkg_resources import resource_filename
 import warnings
+from sklearn.svm import SVC, OneClassSVM
 import numpy as np
 
 with warnings.catch_warnings():
@@ -30,7 +31,7 @@ _weights = resource_filename(
 # Recognizer
 
 
-class FaceRecognizer:
+class FaceEmbedder:
 
     def __init__(self):
         self._session = tf.Session()
@@ -55,14 +56,22 @@ class FaceRecognizer:
 
         return faces_embedded
 
-    def assign_names(self, known_embed, names, faces, threshold=0.65):
-        to_find_emb = self.embed_faces(faces)
-        found = []
-        for emb in to_find_emb:
-            distances = np.sum(np.square(known_embed - emb), 1)
-            idx = np.argmin(distances)
-            if distances[idx] > threshold:
-                found.append('unknown')
-            else:
-                found.append(names[idx])
-        return found
+
+class FaceRecognizer:
+
+    def __init__(self):
+        self._recognizer = SVC(probability=True)
+        self._outlier = OneClassSVM(nu=0.01)
+
+    def fit(self, known_embed, names):
+        self._recognizer.fit(known_embed, names)
+        self._outlier.fit(known_embed)
+
+    def assign_names(self, embedded_faces):
+        scores = self._recognizer.predict_proba(embedded_faces)
+        names = self._recognizer.classes_[np.argmax(scores, 1)]
+
+        unknowns = self._outlier.predict(embedded_faces)
+        names[unknowns == -1] = 'unknowns'
+
+        return names

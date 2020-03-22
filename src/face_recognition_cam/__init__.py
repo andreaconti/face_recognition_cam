@@ -11,5 +11,6 @@ from .util import (
 )
 
 from .recognition import (
-    FaceRecognizer
+    FaceRecognizer,
+    FaceEmbedder
 )
