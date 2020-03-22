@@ -11,6 +11,8 @@ import cv2
 import face_recognition_cam as fc
 import os
 import pickle
+from sklearn import metrics
+import warnings
 
 
 # ARGUMENT PARSING & MAIN
@@ -36,6 +38,12 @@ def main():
     parser_show = subparsers.add_parser('show', help='watch from cam and show a window with labeled faces, for fun')
     parser_show.add_argument('EMBED_FILE', type=argparse.FileType('rb'), help='path to embedded known people')
     parser_show.set_defaults(func=show)
+
+    # test command
+    parser_test = subparsers.add_parser('test', help='test on a dataset')
+    parser_test.add_argument('EMBED_FILE', type=argparse.FileType('rb'), help='path to embedded known people')
+    parser_test.add_argument('DIR', type=str, help='path to a directory with images')
+    parser_test.set_defaults(func=test)
 
     # parse and run
     args = parser.parse_args()
@@ -100,3 +108,18 @@ def show(args):
 
 def watch(args):
     pass
+
+
+# test command
+
+def test(args):
+
+    y, faces = fc.util.load_known_faces(args['DIR'])
+    embedder = fc.FaceEmbedder()
+    recognizer = pickle.load(args['EMBED_FILE'])
+    faces_embedded = embedder.embed_faces(faces)
+    y_pred = recognizer.assign_names(faces_embedded)
+
+    # compute some stats
+    print('== REPORT ==')
+    print(metrics.classification_report(y, y_pred, zero_division=0))
