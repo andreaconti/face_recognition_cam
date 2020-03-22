@@ -82,7 +82,7 @@ def align_face(img, landmarks_5):
     x1 = max(landmarks_[2, 0] - int(eye_distance*0.30), 0)
     x2 = min(landmarks_[0, 0] + int(eye_distance*0.30), aligned.shape[1])
     y1 = max(landmarks_[0, 1] - int(nose_distance*0.7), 0)
-    y2 = max(landmarks_[4, 1] + int(nose_distance*1), aligned.shape[0])
+    y2 = min(landmarks_[4, 1] + int(nose_distance*1), aligned.shape[0])
 
     return aligned, landmarks_, np.array([x1, y1, x2, y2])
 
