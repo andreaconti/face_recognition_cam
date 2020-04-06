@@ -21,15 +21,7 @@ with warnings.catch_warnings():
 # resources
 
 
-_meta_graph = resource_filename(
-    'face_recognition_cam.resources.models',
-    'mfn.ckpt.meta'
-)
-
-_weights = resource_filename(
-    'face_recognition_cam.resources.models',
-    'mfn.ckpt'
-)
+_mfn = resource_filename('face_recognition_cam.resources.models', 'mfn.pb')
 
 
 # CNN Embedder
@@ -42,8 +34,12 @@ class FaceEmbedder:
 
     def __init__(self):
         self._session = tf.Session()
-        saver = tf.train.import_meta_graph(_meta_graph)
-        saver.restore(self._session, _weights)
+
+        with tf.gfile.GFile(_mfn, 'rb') as f:
+            graph_def = tf.GraphDef()
+            graph_def.ParseFromString(f.read())
+            self._session.graph.as_default()
+            tf.import_graph_def(graph_def, name='')
 
     def embed_faces(self, faces: ndarray) -> ndarray:
         """

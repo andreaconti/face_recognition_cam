@@ -4,7 +4,7 @@ Functions for face detection and landmarks
 
 import dlib
 import numpy as np
-from np import ndarray
+from numpy import ndarray
 import cv2
 from typing import Tuple
 from pkg_resources import resource_filename
