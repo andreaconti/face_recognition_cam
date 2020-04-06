@@ -5,13 +5,33 @@ utility functions
 import os
 import cv2
 import numpy as np
+from numpy import ndarray
+from typing import Tuple
 import face_recognition_cam as fc
 
 
 # FILES HANDLING UTILS
 
 
-def load_faces(folder):
+def load_faces(folder: str) -> Tuple[ndarray, ndarray]:
+    """
+    Search for faces in files of type jpg, png and mp4 inside `folder` path. Images or
+    frames of videos with none or more than one face are skipped. To each recognized face
+    is assigned a name equal to the name of the file until '-' character. For instance a
+    file named 'andreaconti-1.jpg' will led to 'andreaconti' label.
+    If a video is found, frames are sampled at 1s distance.
+
+    Parameters
+    ----------
+    folder : str
+        path of the folder in which search for faces
+
+    Returns
+    -------
+    array_like, array_like
+        tuple containing a list of faces and the list of matching labels
+    """
+
     faces_to_return = []
     names_to_return = []
 

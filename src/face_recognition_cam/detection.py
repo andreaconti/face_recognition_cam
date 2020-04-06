@@ -4,7 +4,9 @@ Functions for face detection and landmarks
 
 import dlib
 import numpy as np
+from np import ndarray
 import cv2
+from typing import Tuple
 from pkg_resources import resource_filename
 
 # FACE DETECTION
@@ -17,13 +19,24 @@ _landmarks_pred = dlib.shape_predictor(
 )
 
 
-def find_face_boxes(img):
+def find_face_boxes(img: ndarray) -> ndarray:
     """
-    Returns a 2D array, each row contains left, top, right, bottom
-    coordinates of face boxes find in the image
+    Finds all faces inside the image using HOG and SVM dlib implementation.
+    Faces boxes are returned in a numpy ndarray.
+
+    Parameters
+    ----------
+    img : array_like
+        gray-scale or colored image in which search faces
+
+    Returns
+    -------
+    array_like
+        each row contains left, top, right, bottom coordinates of each box
+        found
     """
     detector = dlib.get_frontal_face_detector()
-    results = detector(img, 1)
+    results = detector(img, 0)
 
     output = []
     for res in results:
@@ -32,10 +45,23 @@ def find_face_boxes(img):
     return np.array(output)
 
 
-def find_5_landmarks(img, box):
+def find_5_landmarks(img: ndarray, box: Tuple[int, int, int, int]) -> ndarray:
     """
-    Returns a 2D array, each row contains a landmark contained in the
-    given box
+    Search for 5 landmarks in a face contained in `img` and localized
+    by `box`.
+
+    Parameters
+    ----------
+    img : array_like
+        gray-scale or colored image in which search faces
+    box : tuple
+        contains left, top, right, bottom integer coordinates of box
+
+    Returns
+    -------
+    array_like
+        each row contains x and y coordinates of one of the 5 landmarks
+        detected
     """
     left, top, right, bottom = box
     shape = _landmarks_pred(img, dlib.rectangle(left, top, right, bottom))
@@ -46,10 +72,24 @@ def find_5_landmarks(img, box):
     return landmark_points
 
 
-def align_face(img, landmarks_5):
+def align_face(img: ndarray, landmarks_5: ndarray) -> Tuple[ndarray, ndarray, ndarray]:
     """
     Image is rotated around provided landmarks in order align face,
     returns the aligned image, new landmarks and new box
+
+    Parameters
+    ----------
+    img : array_like
+        original gray-scale or colored image
+    landmarks_5 : array_like
+        position of 5 face landmarks reshaped as a 5 rows and 2 columns
+        matrix
+
+
+    Returns
+    -------
+    array_like, array_like, array_like
+        respectively aligned image, landmarks and box
     """
 
     # find eyes center
@@ -87,9 +127,29 @@ def align_face(img, landmarks_5):
     return aligned, landmarks_, np.array([x1, y1, x2, y2])
 
 
-def crop_aligned_faces(img, resize, with_boxes=False):
+def crop_aligned_faces(img: ndarray, resize: Tuple[int, int], with_boxes: bool = False):
     """
-    Returns all faces in the image, aligned and cropped, optionally resized.
+    Search for all faces in `img` and returns them resized with the specified
+    `resize` and aligned using 5 landmarks. If you want also face boxes in original img
+    use `with_boxes` option.
+
+    Parameters
+    ----------
+    img : array_like
+        original gray-scale or colored image
+    resize : (int, int)
+        height and width size of the cropped faces returned
+    with_boxes : bool
+        if return also faces boxes coordinates in the original image
+
+
+    Returns
+    -------
+    array_like
+        if with_boxes = False, list of faces cropped and aligned
+
+    array_like, array_like
+        if with_boxes = True, list of faces cropped and aligned and boxes found in `img`
     """
 
     if len(img.shape) != 3 and len(img.shape) != 2:
