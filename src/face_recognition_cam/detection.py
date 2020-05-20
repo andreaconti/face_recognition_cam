@@ -6,20 +6,51 @@ import dlib
 import numpy as np
 from numpy import ndarray
 import cv2
-from typing import Tuple
+from typing import Tuple, Optional
 from pkg_resources import resource_filename
 
 # FACE DETECTION
 
-_landmarks_pred = dlib.shape_predictor(
-    resource_filename(
-        'face_recognition_cam.resources.models',
-        'shape_predictor_5_face_landmarks.dat'
+_landmarks_pred = None
+
+
+def _load_landmarks_if_not():
+    global _landmarks_pred
+
+    if _landmarks_pred is not None:
+        return
+
+    _landmarks_pred = dlib.shape_predictor(
+        resource_filename(
+            'face_recognition_cam.resources.models',
+            'shape_predictor_5_face_landmarks.dat'
+        )
     )
-)
 
 
-def find_face_boxes(img: ndarray) -> ndarray:
+_face_detector: Optional[cv2.dnn_Net] = None
+
+
+def _load_face_detector_if_not():
+    global _face_detector
+
+    if _face_detector is not None:
+        return
+
+    prototxt = resource_filename(
+        'face_recognition_cam.resources.models',
+        'face-detection-retail-0044.prototxt'
+    )
+
+    caffemodel = resource_filename(
+        'face_recognition_cam.resources.models',
+        'face-detection-retail-0044.caffemodel'
+    )
+
+    _face_detector = cv2.dnn.readNetFromCaffe(prototxt, caffemodel)
+
+
+def find_face_boxes(img: ndarray, confidence: float = 0.7) -> ndarray:
     """
     Finds all faces inside the image using HOG and SVM dlib implementation.
     Faces boxes are returned in a numpy ndarray.
@@ -27,7 +58,9 @@ def find_face_boxes(img: ndarray) -> ndarray:
     Parameters
     ----------
     img : array_like
-        gray-scale or colored image in which search faces
+        gray-scale or RGB image in which search faces
+    confidence : float, default 0.7
+        faces with a confidence less than `confidence` will be ignored
 
     Returns
     -------
@@ -35,12 +68,33 @@ def find_face_boxes(img: ndarray) -> ndarray:
         each row contains left, top, right, bottom coordinates of each box
         found
     """
-    detector = dlib.get_frontal_face_detector()
-    results = detector(img, 0)
+    global _face_detector
+
+    # load if not
+    _load_face_detector_if_not()
+
+    # get shape
+    h, w = img.shape[:2]
+
+    # this network takes as input a batch [1, 3, 300, 300] in BGR encoding
+    img_ = cv2.cvtColor(cv2.resize(img, (300, 300)), cv2.COLOR_RGB2BGR)
+    blob = cv2.dnn.blobFromImage(img_, 1.0, (300, 300), [104, 117, 123], False, False)
+
+    # then fine faces
+    _face_detector.setInput(blob)  # type: ignore
+    boxes = _face_detector.forward()  # type: ignore
 
     output = []
-    for res in results:
-        output.append([res.left(), res.top(), res.right(), res.bottom()])
+    for i in range(boxes.shape[2]):
+
+        if boxes[0, 0, i, 2] < confidence:
+            continue
+
+        x1 = np.round(boxes[0, 0, i, 3] * w).astype(np.int)
+        y1 = np.round(boxes[0, 0, i, 4] * h).astype(np.int)
+        x2 = np.round(boxes[0, 0, i, 5] * w).astype(np.int)
+        y2 = np.round(boxes[0, 0, i, 6] * h).astype(np.int)
+        output.append([x1, y1, x2, y2])
 
     return np.array(output)
 
@@ -63,8 +117,13 @@ def find_5_landmarks(img: ndarray, box: Tuple[int, int, int, int]) -> ndarray:
         each row contains x and y coordinates of one of the 5 landmarks
         detected
     """
+
+    # load landmarks
+    _load_landmarks_if_not()
+
+    # do the main stuff
     left, top, right, bottom = box
-    shape = _landmarks_pred(img, dlib.rectangle(left, top, right, bottom))
+    shape = _landmarks_pred(img, dlib.rectangle(left, top, right, bottom))  # type: ignore
     landmark_points = np.empty(shape=(5, 2), dtype=int)
     for i, point in enumerate(shape.parts()):
         landmark_points[i, 0] = point.x
