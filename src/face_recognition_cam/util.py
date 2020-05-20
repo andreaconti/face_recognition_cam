@@ -3,10 +3,10 @@ utility functions
 """
 
 import os
-import cv2
-import numpy as np
+import cv2  # type: ignore
+import numpy as np  # type: ignore
 from numpy import ndarray
-from typing import Tuple
+from typing import Tuple, Optional, List
 import face_recognition_cam as fc
 
 
@@ -100,6 +100,17 @@ def _load_from_video(video_path):
 
 
 class Camera:
+    """
+    It loads the main system camera and provides an easy way to
+    retrieve frames.
+
+    Example
+    -------
+
+        >>> with Cameras as cam:
+        ...     img = cam.image()  # returns the rgb frame
+
+    """
 
     def __init__(self):
         self._cap = None
@@ -120,12 +131,51 @@ class Camera:
 
 
 class ImageWindow:
+    """
+    Provides an easy way to create a window to show an image and
+    optionally sorround faces with labeled boxes.
+
+    Attributes
+    ----------
+    name: str
+        a name for the window (is used as an identifier under the
+        hood for the window)
+
+    Example
+    -------
+
+        >>> with ImageWindow('my_stream') as window:
+        ...     img = np.random.randn(256, 512, 3).astype(np.uint8)
+        ...     window.show(img)
+
+    """
 
     def __init__(self, name):
         self._name = name
         cv2.namedWindow(name, cv2.WINDOW_AUTOSIZE)
 
-    def show(self, img, box_faces=None):
+    def show(self, img: ndarray, box_faces: Optional[Tuple[List[Tuple[int, int, int, int]], List[str]]] = None):
+        """
+        show the provided image and if provided sorround faces with a labeled
+        box
+
+        Parameters
+        ----------
+        img: ndarray
+            the image to be showed.
+        box_faces: (face_boxes, names)
+            where face_boxes is a list of (x1, y1, x2, y2) coordinates and names
+            is a list of matching names.
+
+        Examples
+        --------
+
+            >>> window = ImageWindow('window')
+            >>> img = np.random.randn(256, 512, 3).astype(np.uint8)
+            >>> boxes = ([[50, 50, 100, 100]], ['my_face'])
+            >>> window.show(img, boxes)
+
+        """
 
         if box_faces is not None:
             img_ = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
@@ -142,6 +192,9 @@ class ImageWindow:
             cv2.imshow(self._name, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
     def close(self):
+        """
+        destroy the window
+        """
         cv2.destroyWindow(self._name)
 
     def __enter__(self):

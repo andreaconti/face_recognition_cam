@@ -8,7 +8,7 @@ except ImportError:
 
 setup(
     name="face_recognition_cam",
-    version="0.1",
+    version="0.1.0",
     author="Andrea Conti",
     author_email="andrea.conti@tutanota.com",
     description="Face recognition camera",
@@ -27,10 +27,17 @@ setup(
     install_requires=[
         'argparse',
         'numpy',
-        'pandas',
         'opencv-python',
         'dlib',
-        'tensorflow',
+        'scikit-learn',
         'pkg_resources'
-    ]
+    ],
+    extras_require={
+        'dev': [
+            'pytest',
+            'sphinx',
+            'sphinx_gallery',
+            'sphinx_press_theme'
+        ]
+    }
 )

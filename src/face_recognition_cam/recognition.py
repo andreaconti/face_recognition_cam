@@ -4,11 +4,11 @@ Module containing person recognition
 
 from pkg_resources import resource_filename
 import warnings
-from sklearn.svm import SVC
-import sklearn.utils
-from sklearn.model_selection import cross_val_score
+from sklearn.svm import SVC  # type: ignore
+import sklearn.utils  # type: ignore
+from sklearn.model_selection import cross_val_score  # type: ignore
 from typing import List
-import numpy as np
+import numpy as np  # type: ignore
 from numpy import ndarray
 
 with warnings.catch_warnings():

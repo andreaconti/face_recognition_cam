@@ -1,7 +1,0 @@
-argparse
-numpy
-pandas
-opencv-python
-dlib
-tensorflow
-scikit-learn
