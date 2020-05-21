@@ -13,6 +13,7 @@ def test_version():
 
 
 file_path = os.path.join(os.path.dirname(__file__), 'test_data', 'sample.jpg')
+face_detector = fc.FaceDetector()
 
 
 def test_face_detection():
@@ -22,7 +23,7 @@ def test_face_detection():
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     # find faces
-    boxes = fc.find_face_boxes(img)
+    boxes = face_detector.find_face_boxes(img)
     assert boxes.shape[0] == 1
 
 
@@ -33,7 +34,8 @@ def test_face_embedding():
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     # find faces
-    faces = fc.crop_aligned_faces(img, resize=(112, 112))
+    face_detector = fc.FaceDetector()
+    faces = face_detector.crop_aligned_faces(img, resize=(112, 112))
     assert faces.shape[0] == 1
 
     # embed

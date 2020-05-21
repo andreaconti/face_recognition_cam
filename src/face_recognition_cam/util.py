@@ -32,6 +32,7 @@ def load_faces(folder: str) -> Tuple[ndarray, ndarray]:
         tuple containing a list of faces and the list of matching labels
     """
 
+    detector = fc.FaceDetector()
     faces_to_return = []
     names_to_return = []
 
@@ -45,7 +46,7 @@ def load_faces(folder: str) -> Tuple[ndarray, ndarray]:
         # load face from image
         if f_name.lower().endswith(('.jpg', '.png')):
             img = cv2.cvtColor(cv2.imread(os.path.join(folder, f_name)), cv2.COLOR_BGR2RGB)
-            faces = fc.crop_aligned_faces(img, resize=(112, 112))
+            faces = detector.crop_aligned_faces(img, resize=(112, 112))
 
             if len(faces) == 0:
                 print(f'[WARNING] face not found in {f_name}, skipped.')
@@ -68,6 +69,7 @@ def load_faces(folder: str) -> Tuple[ndarray, ndarray]:
 
 
 def _load_from_video(video_path):
+    detector = fc.FaceDetector()
     faces_to_return = []
     cap = cv2.VideoCapture(video_path)
     frame_rate = cap.get(5)
@@ -76,7 +78,7 @@ def _load_from_video(video_path):
     i = 0
     while ret is True:
         if i % frame_rate == 0:
-            faces = fc.crop_aligned_faces(frame, resize=(112, 112))
+            faces = detector.crop_aligned_faces(frame, resize=(112, 112))
             if len(faces) == 1:
                 faces_to_return.append(faces[0])
                 ret, frame = cap.read()

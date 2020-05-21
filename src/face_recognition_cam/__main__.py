@@ -95,6 +95,7 @@ def show(args):
     with fc.util.Camera() as cam:
 
         # load recognizer, archive and start camera and window
+        detector = fc.FaceDetector()
         embedder = fc.FaceEmbedder()
         recognizer = pickle.load(args['EMBED_FILE'])
         with fc.util.ImageWindow('camera') as window:
@@ -107,7 +108,7 @@ def show(args):
                     break
 
                 # find faces, and who they are
-                faces, boxes = fc.crop_aligned_faces(frame, (112, 112), with_boxes=True)
+                faces, boxes = detector.crop_aligned_faces(frame, (112, 112), with_boxes=True)
                 if len(faces) != 0:
                     faces_embedded = embedder.embed_faces(faces)
                     found_names = recognizer.assign_names(faces_embedded)
@@ -131,12 +132,14 @@ def watch(args):
 
 def recognize(args):
 
-    img = cv2.imread(args['IMG'])
-    cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    faces = fc.crop_aligned_faces(img, resize=(112, 112))
-
+    detector = fc.FaceDetector()
     embedder = fc.FaceEmbedder()
     recognizer = pickle.load(args['EMBED_FILE'])
+
+    img = cv2.imread(args['IMG'])
+    cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    faces = detector.crop_aligned_faces(img, resize=(112, 112))
+
     faces_embedded = embedder.embed_faces(faces)
     names = recognizer.assign_names(faces_embedded)
 
