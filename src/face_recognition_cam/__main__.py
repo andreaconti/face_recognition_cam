@@ -46,7 +46,10 @@ def main():
 
     # parse and run
     args = parser.parse_args()
-    args.func(vars(args))
+    if hasattr(args, 'func'):
+        args.func(vars(args))
+    else:
+        parser.print_help()
 
 
 # SUB-COMMAND FUNCTIONS

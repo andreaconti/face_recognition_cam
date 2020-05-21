@@ -28,9 +28,10 @@ setup(
         'argparse',
         'numpy',
         'opencv-python',
+        'mxnet',
         'dlib',
         'scikit-learn',
-        'pkg_resources'
+        'setuptools'
     ],
     extras_require={
         'dev': [

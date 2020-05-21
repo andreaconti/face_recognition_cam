@@ -3,25 +3,13 @@ Module containing person recognition
 """
 
 from pkg_resources import resource_filename
-import warnings
 from sklearn.svm import SVC  # type: ignore
 import sklearn.utils  # type: ignore
 from sklearn.model_selection import cross_val_score  # type: ignore
 from typing import List
 import numpy as np  # type: ignore
 from numpy import ndarray
-
-with warnings.catch_warnings():
-    warnings.filterwarnings('ignore', category=FutureWarning)
-    import os
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    import tensorflow.compat.v1 as tf
-
-
-# resources
-
-
-_mfn = resource_filename('face_recognition_cam.resources.models', 'mfn.pb')
+import mxnet as mx  # type: ignore
 
 
 # CNN Embedder
@@ -33,13 +21,20 @@ class FaceEmbedder:
     """
 
     def __init__(self):
-        self._session = tf.Session()
 
-        with tf.gfile.GFile(_mfn, 'rb') as f:
-            graph_def = tf.GraphDef()
-            graph_def.ParseFromString(f.read())
-            self._session.graph.as_default()
-            tf.import_graph_def(graph_def, name='')
+        # find file path
+        params_path = resource_filename(
+            'face_recognition_cam.resources.models',
+            'mobileFaceNet-0000.params'
+        )
+        params_path = '-'.join(params_path.split('-')[:-1])
+
+        # load model
+        symbols, args, auxs = mx.model.load_checkpoint(params_path, 0)
+        model = mx.mod.Module(symbol=symbols, data_names=('data',), label_names=None)
+        model.bind(for_training=False, data_shapes=[('data', (1, 3, 112, 112))])
+        model.set_params(args, auxs)
+        self._model = model
 
     def embed_faces(self, faces: ndarray) -> ndarray:
         """
@@ -48,27 +43,36 @@ class FaceEmbedder:
         Parameters
         ----------
         faces: array_like
-            faces parameter must have [N, 112, 112] shape
+            faces parameter must have [N, 112, 112, 3] shape
 
         Returns
         -------
         array_like
             of shape [N, 192] where each row is a face embedded
         """
-
-        # load CNN endpoints
-        images_placeholder = tf.get_default_graph().get_tensor_by_name('input:0')
-        embeddings = tf.get_default_graph().get_tensor_by_name('embeddings:0')
-        phase_train_placeholder = tf.get_default_graph().get_tensor_by_name('phase_train:0')
+        if len(faces.shape) == 3:
+            faces = faces[None, :, :, :]
+        elif len(faces.shape) == 4:
+            _, h, w, c = faces.shape
+            if c != 3 or h != 112 or w != 112:
+                raise ValueError('expected images of shape 3x112x112')
+        else:
+            raise ValueError('shape must be 3 or 4 (a batch)')
 
         # preprocess images
+        faces = np.moveaxis(faces, -1, 1)
         faces = faces - 127.5
         faces = faces * 0.0078125
 
-        faces_embedded = self._session.run(embeddings, feed_dict={
-            images_placeholder: faces,
-            phase_train_placeholder: False
-        })
+        # prepare batch and run
+        batch = mx.io.DataBatch(
+            [mx.nd.array(faces)],
+            provide_data=self._model.data_shapes
+        )
+
+        self._model.forward(batch)
+        faces_embedded = self._model.get_outputs()[0]
+        faces_embedded = faces_embedded.asnumpy()
 
         return faces_embedded
 
