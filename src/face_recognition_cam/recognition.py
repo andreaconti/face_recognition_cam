@@ -27,13 +27,16 @@ class FaceEmbedder:
             'face_recognition_cam.resources.models',
             'mobileFaceNet-0000.params'
         )
-        params_path = '-'.join(params_path.split('-')[:-1])
+        symbols_path = resource_filename(
+            'face_recognition_cam.resources.models',
+            'mobileFaceNet-symbol.json'
+        )
 
         # load model
-        symbols, args, auxs = mx.model.load_checkpoint(params_path, 0)
-        model = mx.mod.Module(symbol=symbols, data_names=('data',), label_names=None)
-        model.bind(for_training=False, data_shapes=[('data', (1, 3, 112, 112))])
-        model.set_params(args, auxs)
+        ctx = mx.cpu()
+        sym = mx.sym.load_json(open(symbols_path, 'r').read())
+        model = mx.gluon.nn.SymbolBlock(outputs=sym, inputs=mx.sym.var('data'))
+        model.load_parameters(params_path, ctx=ctx)
         self._model = model
 
     def embed_faces(self, faces: ndarray) -> ndarray:
@@ -65,14 +68,8 @@ class FaceEmbedder:
         faces = faces - 127.5
         faces = faces * 0.0078125
 
-        # prepare batch and run
-        batch = mx.io.DataBatch(
-            [mx.nd.array(faces)],
-            provide_data=self._model.data_shapes
-        )
-
-        self._model.forward(batch)
-        faces_embedded = self._model.get_outputs()[0]
+        # embed
+        faces_embedded = self._model(mx.nd.array(faces))
         faces_embedded = faces_embedded.asnumpy()
 
         return faces_embedded
