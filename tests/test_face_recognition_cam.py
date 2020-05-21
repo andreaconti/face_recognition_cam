@@ -39,6 +39,6 @@ def test_face_embedding():
     assert faces.shape[0] == 1
 
     # embed
-    embedder = fc.FaceEmbedder()
+    embedder = fc.FaceRecognizer()
     faces_emb = embedder.embed_faces(faces)
     assert faces_emb.shape == (1, 128)

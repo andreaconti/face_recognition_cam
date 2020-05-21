@@ -6,14 +6,17 @@ import os
 import cv2  # type: ignore
 import numpy as np  # type: ignore
 from numpy import ndarray
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict
 import face_recognition_cam as fc
+
+
+# TODO: add logger
 
 
 # FILES HANDLING UTILS
 
 
-def load_faces(folder: str) -> Tuple[ndarray, ndarray]:
+def load_faces(folder: str) -> Dict[str, ndarray]:
     """
     Search for faces in files of type jpg, png and mp4 inside `folder` path. Images or
     frames of videos with none or more than one face are skipped. To each recognized face
@@ -33,8 +36,7 @@ def load_faces(folder: str) -> Tuple[ndarray, ndarray]:
     """
 
     detector = fc.FaceDetector()
-    faces_to_return = []
-    names_to_return = []
+    result: Dict[str, ndarray] = {}
 
     for f_name in os.listdir(folder):
 
@@ -55,17 +57,23 @@ def load_faces(folder: str) -> Tuple[ndarray, ndarray]:
                 print(f'[WARNING] too many faces found in {f_name}, skipped.')
                 continue
 
+            if name not in result.keys():
+                result[name] = []
             face = faces[0]
-            names_to_return.append(name)
-            faces_to_return.append(face)
+            result[name].append(face)
 
         # load face from video
         elif f_name.lower().endswith('.mp4'):
             faces = _load_from_video(os.path.join(folder, f_name))
-            faces_to_return += faces
-            names_to_return += ([name] * len(faces))
 
-    return np.array(names_to_return), np.array(faces_to_return)
+            if name not in result.keys():
+                result[name] = []
+            face = faces[0]
+            result[name].extend(faces)
+
+    for k in result.keys():
+        result[k] = np.stack(result[k])
+    return result
 
 
 def _load_from_video(video_path):

@@ -3,21 +3,16 @@ Module containing person recognition
 """
 
 from pkg_resources import resource_filename
-from sklearn.svm import SVC  # type: ignore
-import sklearn.utils  # type: ignore
-from sklearn.model_selection import cross_val_score  # type: ignore
-from typing import List
+from typing import List, Dict, Tuple
 import numpy as np  # type: ignore
 from numpy import ndarray
 import mxnet as mx  # type: ignore
+from scipy.spatial.distance import cdist  # type: ignore
 
 
-# CNN Embedder
-
-
-class FaceEmbedder:
+class FaceRecognizer:
     """
-    Class for face embedding
+    Class for face embedding and recognizing
     """
 
     def __init__(self):
@@ -62,86 +57,68 @@ class FaceEmbedder:
         else:
             raise ValueError('shape must be 3 or 4 (a batch)')
 
-        # preprocess images
-        faces = np.moveaxis(faces, -1, 1)
-        faces = faces[:, ::-1, :, :]  # RGB -> BGR
-        faces = faces - 127.5
-        faces = faces * 0.0078125
-
         # embed
+        faces = np.moveaxis(faces, -1, 1)
         faces_embedded = self._model(mx.nd.array(faces))
         faces_embedded = faces_embedded.asnumpy()
 
         return faces_embedded
 
-
-# Instances of the recognizer
-
-_unknowns = resource_filename(
-    'face_recognition_cam.resources.data',
-    'unknowns_db.csv'
-)
-
-
-class FaceRecognizer:
-
-    def __init__(self):
-        self._recognizer = SVC()
-
-    def fit(self, known_embed: ndarray, names: ndarray) -> float:
+    def generate_dataset(self, people: Dict[str, ndarray]) -> Dict[str, ndarray]:
         """
-        trains the FaceRecognizer using a list of examples composed by
-        `known_embed` and `names`.
+        Takes as input a dictionary containing as key the name of each person and as value
+        a ndarray representing a batch of images of that person and returns another
+        dictionary 'name': embedding.
 
         Parameters
         ----------
-        known_embed : array_like
-            array of shape [N, 192] examples of embedded faces
-
-        names : array_like of str labels
-            array of N elements with `str` labels, label 'unknown'
-            must not be contained in this list
+        people: Dict[str, ndarray]
+            a dictionary containing for each name a ndarray containing images of that
+            person. each ndarray must be of shape [N, 112, 112, 3]
 
         Returns
         -------
-        mean_score : float
-            returns mean accuracy performed on a 5 cross validation on
-            training set
+        Dict[str, ndarray]
+            where each ndarray is the embedding
         """
+        result: Dict[str, ndarray] = {}
+        for name, imgs in people.items():
+            embeddings = self.embed_faces(imgs)
+            result[name] = np.mean(embeddings, axis=0)
+        return result
 
-        # load unknowns
-        unknowns = np.loadtxt(_unknowns, delimiter=',')
-        unknowns = unknowns[:len(known_embed) // len(np.unique(names))]
-        X = np.vstack([unknowns, known_embed])
-        y = np.hstack([
-            np.array(['unknown'] * len(unknowns)),
-            np.array(names)
-        ])
-        X, y = sklearn.utils.shuffle(X, y)
-
-        # fitting
-        scores = cross_val_score(self._recognizer, X, y, cv=5)
-        mean_score = np.mean(scores)
-        self._recognizer.fit(X, y)
-
-        return mean_score
-
-    def assign_names(self, embedded_faces: ndarray) -> List[str]:
+    def assign_names(self, dataset: Dict[str, ndarray], faces: ndarray,
+                     min_confidence: float = 0.6) -> List[Tuple[str, float]]:
         """
-        Assigns names to `embedded_faces`
+        Assign a name to each face in `faces`.
 
         Parameters
         ----------
-        embedded_faces : array_like
-            array_like of shape [N, 192]
+        dataset: Dict[str, ndarray]
+            a dictionary in which each name is associated to an embedding. It can be
+            generated with `generate_dataset` method.
+
+        faces: ndarray
+            a numpy ndarray of shape [N, 112, 112, 3] where each [112, 112, 3] is a
+            face.
+
+        min_confidence: float, default 0.6
+            if among people the maximum found confidence is less than `min_confidence`
+            such face is labeled as 'unknown'
 
         Returns
         -------
-        list of strings
-            assigned name to each example, between labels there is also
-            'unknown' if the face is not between faces in the training
-            set.
-
+        List[str]
+            the name associated to each face, can be 'unknown' if the maximum confidence
+            found is less than `min_confidence`
         """
-        names = self._recognizer.predict(embedded_faces)
-        return names
+        names, data_emb = zip(*dataset.items())
+        names, data_emb = np.array(names), np.stack(data_emb)
+        faces_emb = self.embed_faces(faces)
+        confidence_matrix = 1 - cdist(faces_emb, data_emb, metric='cosine')
+        best = np.argmax(confidence_matrix, axis=0)
+        confidences = confidence_matrix[np.arange(confidence_matrix.shape[0]), best]
+        names = names[best]
+        names[confidences < min_confidence] = 'unknown'
+        result = list(zip(names, confidences))
+        return result

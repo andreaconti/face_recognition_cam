@@ -56,32 +56,24 @@ def main():
 
 
 # embed command
-# TODO: check empty etc.
 
 def embed(args):
 
     recognizer = fc.FaceRecognizer()
-    embedder = fc.FaceEmbedder()
     if os.path.isdir(args['DIR']):
 
         # extract faces
-        names, faces = fc.load_faces(args['DIR'])
+        people = fc.load_faces(args['DIR'])
 
-        for name in np.unique(names):
-            num_examples = len(faces[names == name])
-            print(f'faces found for {name}: {num_examples}')
+        for name, faces in people.items():
+            print(f'faces found for {name}: {len(faces)}')
 
         # embedding
-        faces_embedded = embedder.embed_faces(faces)
-
-        # training
-        print('fitting on data.. ', end='')
-        score = recognizer.fit(faces_embedded, names)
-        print('{:.2f} % score'.format(score * 100))
+        dataset = recognizer.generate_dataset(people)
 
         # save
         with open(args['o'], 'wb') as f:
-            pickle.dump(recognizer, f)
+            pickle.dump(dataset, f)
         print(f'Saved into {args["o"]}')
     else:
         print('error: not dir')
@@ -89,15 +81,14 @@ def embed(args):
 
 # show command
 
-
 def show(args):
 
     with fc.util.Camera() as cam:
 
         # load recognizer, archive and start camera and window
         detector = fc.FaceDetector()
-        embedder = fc.FaceEmbedder()
-        recognizer = pickle.load(args['EMBED_FILE'])
+        recognizer = fc.FaceRecognizer()
+        dataset = pickle.load(args['EMBED_FILE'])
         with fc.util.ImageWindow('camera') as window:
             while True:
 
@@ -110,8 +101,8 @@ def show(args):
                 # find faces, and who they are
                 faces, boxes = detector.crop_aligned_faces(frame, (112, 112), with_boxes=True)
                 if len(faces) != 0:
-                    faces_embedded = embedder.embed_faces(faces)
-                    found_names = recognizer.assign_names(faces_embedded)
+                    found_names = recognizer.assign_names(dataset, faces)
+                    found_names = ['{} ({:.2f})'.format(name, conf) for name, conf in found_names]
                     window.show(frame, box_faces=(boxes, found_names))
                 else:
                     window.show(frame)
