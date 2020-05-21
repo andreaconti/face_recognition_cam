@@ -30,7 +30,6 @@ setup(
         'opencv-python',
         'mxnet',
         'dlib',
-        'scikit-learn',
         'setuptools'
     ],
     extras_require={
