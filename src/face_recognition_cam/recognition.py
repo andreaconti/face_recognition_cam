@@ -38,12 +38,12 @@ class FaceEmbedder:
 
     def embed_faces(self, faces: ndarray) -> ndarray:
         """
-        Performs face embedding given a list of faces in a ndarray
+        Performs face embedding given a list of faces in a ndarray.
 
         Parameters
         ----------
         faces: array_like
-            faces parameter must have [N, 112, 112, 3] shape
+            faces parameter must have [N, 112, 112, 3] shape, images must be RGB.
 
         Returns
         -------
@@ -61,6 +61,7 @@ class FaceEmbedder:
 
         # preprocess images
         faces = np.moveaxis(faces, -1, 1)
+        faces = faces[:, ::-1, :, :]  # RGB -> BGR
         faces = faces - 127.5
         faces = faces * 0.0078125
 
