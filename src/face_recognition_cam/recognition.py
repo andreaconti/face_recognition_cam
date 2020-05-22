@@ -83,19 +83,18 @@ class FaceRecognizer:
         """
         result: Dict[str, ndarray] = {}
         for name, imgs in people.items():
-            embeddings = self.embed_faces(imgs)
-            result[name] = np.mean(embeddings, axis=0)
+            result[name] = self.embed_faces(imgs)
         return result
 
     def assign_names(self, dataset: Dict[str, ndarray], faces: ndarray,
-                     min_confidence: float = 0.6) -> List[Tuple[str, float]]:
+                     min_confidence: float = 0.5) -> List[Tuple[str, float]]:
         """
         Assign a name to each face in `faces`.
 
         Parameters
         ----------
         dataset: Dict[str, ndarray]
-            a dictionary in which each name is associated to an embedding. It can be
+            a dictionary in which each name is associated to many embeddings. It can be
             generated with `generate_dataset` method.
 
         faces: ndarray
@@ -112,12 +111,18 @@ class FaceRecognizer:
             the name associated to each face, can be 'unknown' if the maximum confidence
             found is less than `min_confidence`
         """
-        names, data_emb = zip(*dataset.items())
-        names, data_emb = np.array(names), np.stack(data_emb)
-        faces_emb = self.embed_faces(faces)
-        confidence_matrix = 1 - cdist(faces_emb, data_emb, metric='cosine')
+        people_emb = self.embed_faces(faces)
+
+        # compute confidence matrix
+        confidence_matrix = np.zeros((len(dataset), people_emb.shape[0]))
+        names = np.empty((len(dataset), ), dtype=object)
+        for i, (name, emb) in enumerate(dataset.items()):
+            names[i] = name
+            confidence_matrix[i, :] = np.max(1 - cdist(emb, people_emb, metric='cosine'), axis=0)
+
+        # find best matches
         best = np.argmax(confidence_matrix, axis=0)
-        confidences = confidence_matrix[np.arange(confidence_matrix.shape[0]), best]
+        confidences = confidence_matrix[best, np.arange(confidence_matrix.shape[1])]
         names = names[best]
         names[confidences < min_confidence] = 'unknown'
         result = list(zip(names, confidences))

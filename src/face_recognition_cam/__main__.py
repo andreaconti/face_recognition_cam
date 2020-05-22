@@ -102,7 +102,7 @@ def show(args):
                 faces, boxes = detector.crop_aligned_faces(frame, (112, 112), with_boxes=True)
                 if len(faces) != 0:
                     found_names = recognizer.assign_names(dataset, faces)
-                    found_names = ['{} ({:.2f})'.format(name, conf) for name, conf in found_names]
+                    found_names = ['{} ({:.2f} %)'.format(name, conf*100) for name, conf in found_names]
                     window.show(frame, box_faces=(boxes, found_names))
                 else:
                     window.show(frame)
