@@ -30,6 +30,7 @@ setup(
     install_requires=[
         "argparse",
         "numpy",
+        "scipy>=1.5.0",
         "opencv-python",
         "mxnet",
         "dlib",
