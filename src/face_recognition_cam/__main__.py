@@ -9,6 +9,7 @@ face recognition cam main
 import argparse
 import os
 import pickle
+import subprocess
 
 import cv2
 
@@ -36,16 +37,23 @@ def main():
     )
     parser_embed.set_defaults(func=embed)
 
-    # watch command
-    parser_watch = subparsers.add_parser("watch", help="starts to watch from a cam")
-    parser_watch.add_argument(
+    # trigger command
+    parser_trigger = subparsers.add_parser(
+        "trigger",
+        help="trigger from the camera and call scripts when recognize someone",
+    )
+    parser_trigger.add_argument(
         "EMBED_FILE", type=argparse.FileType("rb"), help="path to embedded known people"
     )
-    parser_watch.set_defaults(func=watch)
+    parser_trigger.add_argument(
+        "--on", action="append", nargs=2, metavar=("name", "script")
+    )
+    parser_trigger.set_defaults(func=trigger)
 
     # show command
     parser_show = subparsers.add_parser(
-        "show", help="watch from cam and show a window with labeled faces, for fun"
+        "show",
+        help="watch from cam and show a window with labeled faces, for fun and debug",
     )
     parser_show.add_argument(
         "EMBED_FILE", type=argparse.FileType("rb"), help="path to embedded known people"
@@ -53,7 +61,10 @@ def main():
     parser_show.set_defaults(func=show)
 
     # recognize command
-    parser_test = subparsers.add_parser("recognize", help="test on a dataset")
+    parser_test = subparsers.add_parser(
+        "recognize",
+        help="writes the name of all recognized people in the provided image",
+    )
     parser_test.add_argument(
         "EMBED_FILE", type=argparse.FileType("rb"), help="path to embedded known people"
     )
@@ -138,8 +149,23 @@ def show(args):
 # watch command
 
 
-def watch(args):
-    print("Sorry, not yet implemented.")
+def trigger(args):
+
+    alert = fc.util.CameraAlert()
+    dataset = pickle.load(args["EMBED_FILE"])
+
+    for name, cmd in args["on"]:
+
+        @alert.register(name)
+        def exec_cmd():
+            process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+            output, error = process.communicate()
+            if error is not None:
+                print(error.decode("ascii"))
+            if output is not None:
+                print(output.decode("ascii"))
+
+    alert.watch(dataset)
 
 
 # recognize command
