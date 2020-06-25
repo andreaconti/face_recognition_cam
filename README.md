@@ -125,11 +125,10 @@ solutions for these tasks, here a brief of used technologies and some reference:
 
 ### Face Detection
 
-For face detection there are many robust solutions such as Viola Jones[^vj], HoG + SVM [^hog]
+For face detection there are many robust solutions such as Viola Jones [1], HoG + SVM [2]
 and many different kind of Convolutional Neural Networks. Here is used a pretrained model
-based on the architecture called  _Single Shot Multi Box Detector_ (SSD) [^ssd] which can
-be found at
-https://github.com/opencv/open_model_zoo/tree/master/models/public/face-detection_retail-0044
+based on the architecture called  _Single Shot Multi Box Detector_ (SSD) [3] which can
+be found [here](https://github.com/opencv/open_model_zoo/tree/master/models/public/face-detection_retail-0044)
 under [Apache License Version 2.0](https://github.com/opencv/open_model_zoo/blob/master/LICENSE).
 
 ### Facial Landmarks Detection
@@ -146,11 +145,12 @@ contained into [dlib](http://dlib.net) using only a subset of 5 landmarks to per
 
 Face embedding consists into the transformation of a face into a vector, such process is usually carried
 out by a proper trained neural networks and as usual many different ways to accomplish that are avaiable.
-A light and effective implementation of MobileFaceNet [^mfn] is used here: a pretrained model can be found
-in the [OpenVINO Toolkit](https://github.com/opencv/open_model_zoo/blob/master). To compare embedded faces
+A light and effective implementation of MobileFaceNet [4] is used here: a pretrained model can be found
+in the [OpenVINO Toolkit](https://github.com/opencv/open_model_zoo). To compare embedded faces
 is used _cosine distance_.
 
 
-[^vj]: P. Viola and M. J. Jones, "Robust real-time face detection", 2004
-[^hog]: N. Dalal and B. Triggs, "Histograms of oriented gradients for human detection", 2005
-[^ssd]: W. Liu et al., "SSD: single shot multibox detector", 2015
+[1]: P. Viola and M. J. Jones, "Robust real-time face detection", 2004
+[2]: N. Dalal and B. Triggs, "Histograms of oriented gradients for human detection", 2005
+[3]: W. Liu et al., "SSD: single shot multibox detector", 2015
+[4]: S. Chen, Y. Liu et al., "Mobilefacenets: Efficient cnns for accurate real-time face verification on mobile devices"
