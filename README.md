@@ -129,7 +129,7 @@ solutions for these tasks, here a brief of used technologies and some reference:
 For face detection there are many robust solutions such as Viola Jones [1], HoG + SVM [2]
 and many different kind of Convolutional Neural Networks. Here is used a pretrained model
 based on the architecture called  _Single Shot Multi Box Detector_ (SSD) [3] which can
-be found [here](https://github.com/opencv/open_model_zoo/tree/master/models/public/face-detection_retail-0044)
+be found [here](https://github.com/opencv/open_model_zoo/tree/master/models/public/face-detection-retail-0044)
 under [Apache License Version 2.0](https://github.com/opencv/open_model_zoo/blob/master/LICENSE).
 
 ### Facial Landmarks Detection
