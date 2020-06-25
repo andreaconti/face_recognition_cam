@@ -150,7 +150,10 @@ in the [OpenVINO Toolkit](https://github.com/opencv/open_model_zoo). To compare 
 is used _cosine distance_.
 
 
-[1]: P. Viola and M. J. Jones, "Robust real-time face detection", 2004
-[2]: N. Dalal and B. Triggs, "Histograms of oriented gradients for human detection", 2005
-[3]: W. Liu et al., "SSD: single shot multibox detector", 2015
-[4]: S. Chen, Y. Liu et al., "Mobilefacenets: Efficient cnns for accurate real-time face verification on mobile devices"
+[1] P. Viola and M. J. Jones, "Robust real-time face detection", 2004
+
+[2] N. Dalal and B. Triggs, "Histograms of oriented gradients for human detection", 2005
+
+[3] W. Liu et al., "SSD: single shot multibox detector", 2015
+
+[4] S. Chen, Y. Liu et al., "Mobilefacenets: Efficient cnns for accurate real-time face verification on mobile devices"
