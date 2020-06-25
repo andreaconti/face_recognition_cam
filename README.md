@@ -1,13 +1,17 @@
 # Face Recognition Cam
 
-This project aims to provide a simple API and CLI interface for face recognition, to do that some steps are
-required:
+This project aims to implement a simple API for a camera with face recognition features mainly for didactic purposes but
+I hope it'll be useful to someone.
+
+To accomplish this task some steps are required:
 
 1. find faces
 2. find facial landmarks
 3. warp faces to standard landmark positions
 4. encode faces into vectors
 5. search of similarities into a database of known faces
+
+`face_recognition_cam` takes takes care of all of them.
 
 ## API Usage
 
@@ -16,7 +20,10 @@ required:
 - `FaceDetector`, used to detect a faces in the image, crop them, identify facial landmarks and align faces
 - `FaceRecognizer`, used to assign a label to each known face or classify them as unknown
 
-Finally `CameraAlert` class can be used to monitor a camera and execute custom functions when a face is recognized.
+Finally some utilities are contained into `util` module:
+
+- `Camera` provides a way to retrieve frames from a camera.
+- `CameraAlert` class can be used to monitor a camera and execute custom functions when a face is recognized.
 
 ### FaceDetector
 
