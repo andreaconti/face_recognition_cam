@@ -27,8 +27,6 @@ Finally some utilities are contained into `util` module:
 
 ### FaceDetector
 
-![sample image](readme_files/sample.jpg)
-
 ```python
 import face_recognition_cam as fc
 
@@ -41,7 +39,10 @@ face_detector = fc.FaceDetector()
 faces = face_detector.crop_aligned_faces(img, resize=(250, 250))
 ```
 
-![sample_crop_face](readme_files/sample_crop_face.jpg)
+<p align="center">
+    <img src="readme_files/sample.jpg" alt="sample image" width="200"/>
+    <img src="readme_files/sample_crop_face.jpg" alt="sample crop face" width="200"/>
+</p>
 
 ### FaceRecognizer
 
