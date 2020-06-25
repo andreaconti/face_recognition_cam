@@ -154,16 +154,19 @@ def trigger(args):
     alert = fc.util.CameraAlert()
     dataset = pickle.load(args["EMBED_FILE"])
 
-    for name, cmd in args["on"]:
-
-        @alert.register(name)
-        def exec_cmd():
+    def exec_cmd(cmd):
+        def _exec_cmd():
             process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
             output, error = process.communicate()
             if error is not None:
                 print(error.decode("ascii"))
             if output is not None:
                 print(output.decode("ascii"))
+
+        return _exec_cmd
+
+    for name, cmd in args["on"]:
+        alert.register(name)(exec_cmd(cmd))
 
     alert.watch(dataset)
 
