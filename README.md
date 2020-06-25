@@ -110,10 +110,47 @@ optional arguments:
 
 `facecam embed` can be used to generate the dataset and `facecam show` can be used
 to grasp visually the quality of recognition but the most interesting command is
-`facecame recognize` which can be used to execute bash command on recognition events.
+`facecam recognize` which can be used to execute bash command on recognition events.
 
 ```bash
 $ facecam recognize dataset \
         --on "andrea" 'echo "Hello Andrea"'
         --on "unknown" 'echo "go away please"'
 ```
+
+## Implementation Details
+
+Each step in the face recognition process is quite complex and is plenty of different
+solutions for these tasks, here a brief of used technologies and some reference:
+
+### Face Detection
+
+For face detection there are many robust solutions such as Viola Jones[^vj], HoG + SVM [^hog]
+and many different kind of Convolutional Neural Networks. Here is used a pretrained model
+based on the architecture called  _Single Shot Multi Box Detector_ (SSD) [^ssd] which can
+be found at
+https://github.com/opencv/open_model_zoo/tree/master/models/public/face-detection_retail-0044
+under [Apache License Version 2.0](https://github.com/opencv/open_model_zoo/blob/master/LICENSE).
+
+### Facial Landmarks Detection
+
+Facial landmarks are used to localize salient regions of the face such as eyes, nose, mouth and so
+on and can be used for many purposes, such as to perform face alignment.
+An example of 68 facial landmarks can be found into the
+[iBUG 300-W dataset](https://ibug.doc.ic.ac.uk/resources/facial-point-annotations/)
+
+Many different implementations of landmark detection exist, in this project is used the implementation
+contained into [dlib](http://dlib.net) using only a subset of 5 landmarks to perform face.
+
+### Face Embedding
+
+Face embedding consists into the transformation of a face into a vector, such process is usually carried
+out by a proper trained neural networks and as usual many different ways to accomplish that are avaiable.
+A light and effective implementation of MobileFaceNet [^mfn] is used here: a pretrained model can be found
+in the [OpenVINO Toolkit](https://github.com/opencv/open_model_zoo/blob/master). To compare embedded faces
+is used _cosine distance_.
+
+
+[^vj]: P. Viola and M. J. Jones, "Robust real-time face detection", 2004
+[^hog]: N. Dalal and B. Triggs, "Histograms of oriented gradients for human detection", 2005
+[^ssd]: W. Liu et al., "SSD: single shot multibox detector", 2015
