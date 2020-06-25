@@ -6,7 +6,7 @@ import re
 
 from setuptools import find_packages, setup
 
-with io.open("src/face_recognition_cam/__init__.py", "rt", encoding="utf8") as f:
+with io.open("face_recognition_cam/__init__.py", "rt", encoding="utf8") as f:
     searched = re.search(r"__version__ = \"(.*?)\"", f.read())
     if searched is None:
         raise ImportError(
@@ -22,9 +22,8 @@ setup(
     author_email="andrea.conti@tutanota.com",
     description="Face recognition camera",
     long_description=open("README.md").read(),
-    package_dir={"": "src"},
     packages=find_packages(),
-    package_data={"": ["*.dat", "*.csv"]},
+    package_data={"": ["*.dat", "*.caffemodel", "*.prototxt", "*.params", "*.json"]},
     entry_points={"console_scripts": ["facecam = face_recognition_cam.__main__:main"]},
     tests_require=["pytest"],
     install_requires=[

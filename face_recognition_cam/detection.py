@@ -2,29 +2,29 @@
 Functions for face detection and landmarks
 """
 
+from typing import Tuple
+
+import cv2
 import dlib
 import numpy as np
 from numpy import ndarray
-import cv2
-from typing import Tuple
 from pkg_resources import resource_filename
 
 # FACE DETECTION
 
 
 class FaceDetector:
-
     def __init__(self, confidence: float = 0.7):
 
         # load caffe face detector
         prototxt = resource_filename(
-            'face_recognition_cam.resources.models',
-            'face-detection-retail-0044.prototxt'
+            "face_recognition_cam.resources.models",
+            "face-detection-retail-0044.prototxt",
         )
 
         caffemodel = resource_filename(
-            'face_recognition_cam.resources.models',
-            'face-detection-retail-0044.caffemodel'
+            "face_recognition_cam.resources.models",
+            "face-detection-retail-0044.caffemodel",
         )
 
         self._face_detector = cv2.dnn.readNetFromCaffe(prototxt, caffemodel)
@@ -32,8 +32,8 @@ class FaceDetector:
         # load keypoints detector
         self._landmarks_pred = dlib.shape_predictor(
             resource_filename(
-                'face_recognition_cam.resources.models',
-                'shape_predictor_5_face_landmarks.dat'
+                "face_recognition_cam.resources.models",
+                "shape_predictor_5_face_landmarks.dat",
             )
         )
 
@@ -64,7 +64,9 @@ class FaceDetector:
 
         # this network takes as input a batch [1, 3, 300, 300] in BGR encoding
         img_ = cv2.cvtColor(cv2.resize(img, (300, 300)), cv2.COLOR_RGB2BGR)
-        blob = cv2.dnn.blobFromImage(img_, 1.0, (300, 300), [104, 117, 123], False, False)
+        blob = cv2.dnn.blobFromImage(
+            img_, 1.0, (300, 300), [104, 117, 123], False, False
+        )
 
         # then fine faces
         self._face_detector.setInput(blob)  # type: ignore
@@ -105,14 +107,16 @@ class FaceDetector:
 
         # do the main stuff
         left, top, right, bottom = box
-        shape = self._landmarks_pred(img, dlib.rectangle(left, top, right, bottom))  # type: ignore
+        shape = self._landmarks_pred(img, dlib.rectangle(left, top, right, bottom))
         landmark_points = np.empty(shape=(5, 2), dtype=int)
         for i, point in enumerate(shape.parts()):
             landmark_points[i, 0] = point.x
             landmark_points[i, 1] = point.y
         return landmark_points
 
-    def align_face(self, img: ndarray, landmarks_5: ndarray) -> Tuple[ndarray, ndarray, ndarray]:
+    def align_face(
+        self, img: ndarray, landmarks_5: ndarray
+    ) -> Tuple[ndarray, ndarray, ndarray]:
         """
         Image is rotated around provided landmarks in order align face,
         returns the aligned image, new landmarks and new box
@@ -145,10 +149,7 @@ class FaceDetector:
         # rotate img
         rot_mat = cv2.getRotationMatrix2D(tuple(eyes_center), angle, 1.0)
         aligned = cv2.warpAffine(
-            img,
-            rot_mat,
-            tuple(img.shape[:2][::-1]),
-            flags=cv2.INTER_LINEAR
+            img, rot_mat, tuple(img.shape[:2][::-1]), flags=cv2.INTER_LINEAR
         )
 
         # rotate landmarks
@@ -159,18 +160,20 @@ class FaceDetector:
         # find new bounding box
         eye_distance = landmarks_[0, 0] - landmarks_[2, 0]
         nose_distance = landmarks_[4, 1] - landmarks_[0, 1]
-        x1 = max(landmarks_[2, 0] - int(eye_distance*0.30), 0)
-        x2 = min(landmarks_[0, 0] + int(eye_distance*0.30), aligned.shape[1])
-        y1 = max(landmarks_[0, 1] - int(nose_distance*0.7), 0)
-        y2 = min(landmarks_[4, 1] + int(nose_distance*1), aligned.shape[0])
+        x1 = max(landmarks_[2, 0] - int(eye_distance * 0.30), 0)
+        x2 = min(landmarks_[0, 0] + int(eye_distance * 0.30), aligned.shape[1])
+        y1 = max(landmarks_[0, 1] - int(nose_distance * 0.7), 0)
+        y2 = min(landmarks_[4, 1] + int(nose_distance * 1), aligned.shape[0])
 
         return aligned, landmarks_, np.array([x1, y1, x2, y2])
 
-    def crop_aligned_faces(self, img: ndarray, resize: Tuple[int, int], with_boxes: bool = False):
+    def crop_aligned_faces(
+        self, img: ndarray, resize: Tuple[int, int], with_boxes: bool = False
+    ):
         """
         Search for all faces in `img` and returns them resized with the specified
-        `resize` and aligned using 5 landmarks. If you want also face boxes in original img
-        use `with_boxes` option.
+        `resize` and aligned using 5 landmarks. If you want also face boxes in
+        original img use `with_boxes` option.
 
         Parameters
         ----------
@@ -188,11 +191,12 @@ class FaceDetector:
             if with_boxes = False, list of faces cropped and aligned
 
         array_like, array_like
-            if with_boxes = True, list of faces cropped and aligned and boxes found in `img`
+            if with_boxes = True, list of faces cropped and aligned and boxes
+            found in `img`
         """
 
         if len(img.shape) != 3 and len(img.shape) != 2:
-            raise ValueError('img must have shape 2 or 3')
+            raise ValueError("img must have shape 2 or 3")
 
         shape = np.array([*img.shape])
         shape[0] = resize[0]

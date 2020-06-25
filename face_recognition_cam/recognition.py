@@ -2,11 +2,12 @@
 Module containing person recognition
 """
 
-from pkg_resources import resource_filename
-from typing import List, Dict, Tuple
+from typing import Dict, List, Tuple
+
+import mxnet as mx  # type: ignore
 import numpy as np  # type: ignore
 from numpy import ndarray
-import mxnet as mx  # type: ignore
+from pkg_resources import resource_filename
 from scipy.spatial.distance import cdist  # type: ignore
 
 
@@ -19,18 +20,16 @@ class FaceRecognizer:
 
         # find file path
         params_path = resource_filename(
-            'face_recognition_cam.resources.models',
-            'mobileFaceNet-0000.params'
+            "face_recognition_cam.resources.models", "mobileFaceNet-0000.params"
         )
         symbols_path = resource_filename(
-            'face_recognition_cam.resources.models',
-            'mobileFaceNet-symbol.json'
+            "face_recognition_cam.resources.models", "mobileFaceNet-symbol.json"
         )
 
         # load model
         ctx = mx.cpu()
-        sym = mx.sym.load_json(open(symbols_path, 'r').read())
-        model = mx.gluon.nn.SymbolBlock(outputs=sym, inputs=mx.sym.var('data'))
+        sym = mx.sym.load_json(open(symbols_path, "r").read())
+        model = mx.gluon.nn.SymbolBlock(outputs=sym, inputs=mx.sym.var("data"))
         model.load_parameters(params_path, ctx=ctx)
         self._model = model
 
@@ -53,9 +52,9 @@ class FaceRecognizer:
         elif len(faces.shape) == 4:
             _, h, w, c = faces.shape
             if c != 3 or h != 112 or w != 112:
-                raise ValueError('expected images of shape 3x112x112')
+                raise ValueError("expected images of shape 3x112x112")
         else:
-            raise ValueError('shape must be 3 or 4 (a batch)')
+            raise ValueError("shape must be 3 or 4 (a batch)")
 
         # embed
         faces = np.moveaxis(faces, -1, 1)
@@ -66,9 +65,9 @@ class FaceRecognizer:
 
     def generate_dataset(self, people: Dict[str, ndarray]) -> Dict[str, ndarray]:
         """
-        Takes as input a dictionary containing as key the name of each person and as value
-        a ndarray representing a batch of images of that person and returns another
-        dictionary 'name': embedding.
+        Takes as input a dictionary containing as key the name of each
+        person and as value a ndarray representing a batch of images of
+        that person and returns another dictionary 'name': embedding.
 
         Parameters
         ----------
@@ -86,8 +85,9 @@ class FaceRecognizer:
             result[name] = self.embed_faces(imgs)
         return result
 
-    def assign_names(self, dataset: Dict[str, ndarray], faces: ndarray,
-                     min_confidence: float = 0.5) -> List[Tuple[str, float]]:
+    def assign_names(
+        self, dataset: Dict[str, ndarray], faces: ndarray, min_confidence: float = 0.5
+    ) -> List[Tuple[str, float]]:
         """
         Assign a name to each face in `faces`.
 
@@ -98,7 +98,7 @@ class FaceRecognizer:
             generated with `generate_dataset` method.
 
         faces: ndarray
-            a numpy ndarray of shape [N, 112, 112, 3] where each [112, 112, 3] is a
+            a numpy ndarray of shape [N,112, 112, 3] where each [112, 112, 3] is a
             face.
 
         min_confidence: float, default 0.6
@@ -115,15 +115,17 @@ class FaceRecognizer:
 
         # compute confidence matrix
         confidence_matrix = np.zeros((len(dataset), people_emb.shape[0]))
-        names = np.empty((len(dataset), ), dtype=object)
+        names = np.empty((len(dataset),), dtype=object)
         for i, (name, emb) in enumerate(dataset.items()):
             names[i] = name
-            confidence_matrix[i, :] = np.max(1 - cdist(emb, people_emb, metric='cosine'), axis=0)
+            confidence_matrix[i, :] = np.max(
+                1 - cdist(emb, people_emb, metric="cosine"), axis=0
+            )
 
         # find best matches
         best = np.argmax(confidence_matrix, axis=0)
         confidences = confidence_matrix[best, np.arange(confidence_matrix.shape[1])]
         names = names[best]
-        names[confidences < min_confidence] = 'unknown'
+        names[confidences < min_confidence] = "unknown"
         result = list(zip(names, confidences))
         return result
