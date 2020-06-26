@@ -150,6 +150,39 @@ A light and effective implementation of MobileFaceNet [4] is used here: a pretra
 in the [OpenVINO Toolkit](https://github.com/opencv/open_model_zoo). To compare embedded faces
 is used _cosine distance_.
 
+## Performances
+
+Here a visual brief about per `face_recognition_cam` recognition performances, face detection is really effective and is robust versus different point of view, scale and rotations.
+
+<p align="center">
+  <img src="readme_files/visual_performances/sample_1.png" alt="sample image" width="150"/>
+  <img src="readme_files/visual_performances/sample_2.png" alt="sample image" width="150"/>
+  <img src="readme_files/visual_performances/sample_3.png" alt="sample image" width="150"/>
+  <img src="readme_files/visual_performances/sample_4.png" alt="sample image" width="150"/>
+  <img src="readme_files/visual_performances/sample_5.png" alt="sample image" width="150"/>
+</p>
+
+Face recognition is robust versus rotation and scale but it does not really handle well different points of view, below misclassified examples:
+
+<p align="center">
+  <img src="readme_files/visual_performances/sample_3.png" alt="sample image" width="250"/>
+  <img src="readme_files/visual_performances/sample_4.png" alt="sample image" width="250"/>
+</p>
+
+Maybe in further releases robustness will be improved.
+
+Finally occlusion is partially well handled, again face detection is quite effective and face recognition instead becames instable.
+
+
+
+<p align="center">
+  <img src="readme_files/visual_performances/sample_6.png" alt="sample image" width="250"/>
+  <img src="readme_files/visual_performances/sample_7.png" alt="sample image" width="250"/>
+</p>
+
+
+
+---
 
 [1] P. Viola and M. J. Jones, "Robust real-time face detection", 2004
 
